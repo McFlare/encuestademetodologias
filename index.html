@@ -8,7 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Paleta cromática oficial de la marca */
             --azul-1: #005799;
             --azul-2: #009FE3;
             --azul-3: #A3D9EA;
@@ -48,7 +47,6 @@
             margin-bottom: 10px;
         }
 
-        /* Símbolo de burbujas de diálogo heredado del manual de marca */
         .bubble-icon {
             position: relative;
             width: 48px;
@@ -69,14 +67,14 @@
         }
 
         h1 {
-            font-weight: 900; /* Lato Black */
+            font-weight: 900;
             font-size: 1.8rem;
             color: var(--azul-1);
             margin-bottom: 4px;
         }
 
         .subtitle {
-            font-weight: 700; /* Lato Bold */
+            font-weight: 700;
             font-size: 0.95rem;
             color: var(--azul-2);
             text-transform: uppercase;
@@ -102,7 +100,7 @@
         }
 
         .poll-description {
-            font-weight: 400; /* Lato Regular */
+            font-weight: 400;
             font-size: 1rem;
             color: #444;
             line-height: 1.5;
@@ -189,7 +187,6 @@
             background-color: var(--azul-2);
         }
 
-        /* Sección de resultados compilados globales */
         .results-container {
             display: none;
         }
@@ -261,7 +258,6 @@
     </header>
 
     <main>
-        <!-- Formulario de Arrastre y Votación -->
         <div id="votingView">
             <h2 class="poll-title">¿Cómo prefieres aprender un tema nuevo?</h2>
             <p class="poll-description">
@@ -307,11 +303,10 @@
             <button type="button" id="submitBtn" class="btn-submit">Enviar mi clasificación</button>
         </div>
 
-        <!-- Vista de Resultados Compilados -->
         <div id="resultsView" class="results-container">
             <h2 class="poll-title" style="margin-bottom: 20px;">Resultados Compilados</h2>
             <div id="resultsList"></div>
-            <div class="total-votes" id="totalVotesText">Total de respuestas compiladas: Cargando...</div>
+            <div class="total-votes" id="totalVotesText">Total de respuestas compiladas: Consultando el sistema...</div>
         </div>
     </main>
 
@@ -327,8 +322,8 @@
         const resultsList = document.getElementById('resultsList');
         const totalVotesText = document.getElementById('totalVotesText');
 
-        // URL exacta de tu Web App de Google Apps Script configurada
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgQu3sbFzuitjTPS1hSiWmSK1thKSua9k9vngVuWH4T9TzH5Kb6TZVnv23irFQT1ue/exec';
+        // URL actualizada de tu Web App de Google Apps Script
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZxQUYJUxKMh1owyZIx36O0STUaTEAFdwBargvMsM8L4_1B-E0HxVyJoMKb0vOW_s7/exec';
 
         const itemsText = [
             "El profesor habla casi toda la clase explicando el tema mientras tú tomas apuntes.",
@@ -340,7 +335,6 @@
             "Realizas una actividad práctica donde tienes que aplicar lo aprendido inmediatamente."
         ];
 
-        // Lógica de interacción por arrastrar y soltar (Drag and Drop)
         let draggingItem = null;
 
         dragList.addEventListener('dragstart', (e) => {
@@ -387,14 +381,12 @@
             });
         }
 
-        // Envío de la respuesta y guardado en Google Sheets
         submitBtn.addEventListener('click', () => {
             const currentOrder = [...dragList.querySelectorAll('.drag-item')].map(item => ({
                 optionId: item.getAttribute('data-id'),
                 optionText: item.querySelector('.item-text').textContent.trim()
             }));
 
-            // Asignación de puntos Borda (Puesto 1 = 7 pts, Puesto 7 = 1 pt)
             const totalItems = currentOrder.length;
             const payload = currentOrder.map((item, index) => ({
                 optionId: item.optionId,
@@ -404,45 +396,51 @@
             }));
 
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Enviando y calculando resultados...';
+            submitBtn.textContent = 'Enviando y actualizando resultados...';
 
-            // Envío asíncrono a tu Google Sheets (modo no-cors)
+            // 1. Enviar el voto al Sheet vía POST
             fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                showResults(payload);
+                // 2. Esperar 1.5 segundos para que Google registre el dato y luego consultar los resultados reales
+                setTimeout(fetchRealResults, 1500);
             }).catch(err => {
                 console.error('Error al registrar:', err);
-                showResults(payload);
+                fetchRealResults();
             });
         });
 
-        function showResults(userPayload) {
+        function fetchRealResults() {
             votingView.style.display = 'none';
             resultsView.style.display = 'block';
+            totalVotesText.textContent = 'Cargando datos reales del sistema...';
 
-            // Base de puntajes acumulados estimada de prueba + el voto actual del estudiante
-            let baseScores = [120, 140, 130, 160, 150, 180, 190]; 
-            let totalSubmissions = 25; 
+            // Consultar los datos almacenados en el Google Sheet mediante GET
+            fetch(SCRIPT_URL)
+                .then(response => response.json())
+                .then(data => {
+                    renderResults(data.scores, data.totalSubmissions);
+                })
+                .catch(err => {
+                    console.error('Error al obtener resultados:', err);
+                    totalVotesText.textContent = 'No se pudieron cargar los resultados en este momento.';
+                });
+        }
 
-            userPayload.forEach(item => {
-                baseScores[parseInt(item.optionId)] += item.bordaPoints;
-            });
-            totalSubmissions += 1;
-
+        function renderResults(scores, totalSubmissions) {
             const rankedResults = itemsText.map((text, idx) => ({
                 text: text,
-                score: baseScores[idx]
+                score: scores[idx] || 0
             })).sort((a, b) => b.score - a.score);
 
-            const maxPossibleScore = totalSubmissions * 7;
+            const maxPossibleScore = totalSubmissions > 0 ? totalSubmissions * 7 : 1;
             resultsList.innerHTML = '';
 
             rankedResults.forEach((item, index) => {
-                const percentage = Math.round((item.score / maxPossibleScore) * 100);
+                const percentage = totalSubmissions > 0 ? Math.round((item.score / maxPossibleScore) * 100) : 0;
                 const itemHTML = `
                     <div class="result-item">
                         <div class="result-label-row">
