@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¿Cómo prefieres aprender un tema nuevo? — Metodologías Comunicativas</title>
+    <title>¿Cómo prefieres aprender un tema nuevo? — Aprender haciendo, enseñar comunicando</title>
     <!-- Tipografía Oficial: Lato -->
     <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
     <style>
@@ -44,7 +44,7 @@
             align-items: center;
             justify-content: center;
             gap: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .bubble-icon {
@@ -68,17 +68,28 @@
 
         h1 {
             font-weight: 900;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             color: var(--azul-1);
-            margin-bottom: 4px;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        h1 span {
+            display: block;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--azul-2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
         .subtitle {
             font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--azul-2);
+            font-size: 0.85rem;
+            color: var(--verde);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         main {
@@ -232,7 +243,6 @@
             font-weight: 700;
         }
 
-        /* Botón discreto y pequeño para ver resultados sin votar */
         .discreet-link {
             display: block;
             text-align: center;
@@ -268,8 +278,8 @@
         <div class="brand-header">
             <div class="bubble-icon"></div>
             <div>
-                <h1>Metodologías Comunicativas</h1>
-                <div class="subtitle">Centro de Plurilingüismo • Unimagdalena</div>
+                <h1>Aprender haciendo, <span>Enseñar comunicando</span></h1>
+                <div class="subtitle" style="margin-top: 4px;">Centro de Plurilingüismo • Unimagdalena</div>
             </div>
         </div>
     </header>
@@ -318,20 +328,18 @@
             </div>
 
             <button type="button" id="submitBtn" class="btn-submit">Enviar mi clasificación</button>
-            
-            <!-- Enlace pequeño y discreto -->
             <a id="viewResultsBtn" class="discreet-link">Ver resultados acumulados</a>
         </div>
 
         <div id="resultsView" class="results-container">
-            <h2 class="poll-title" style="margin-bottom: 20px;">Resultados Compilados</h2>
+            <h2 class="poll-title" style="margin-bottom: 20px;">Resultados Compilados (Índice Grupal)</h2>
             <div id="resultsList"></div>
             <div class="total-votes" id="totalVotesText">Total de respuestas compiladas: Consultando el sistema...</div>
         </div>
     </main>
 
     <footer>
-        <p>Universidad del Magdalena[cite: 1] | <strong>Versión 2.0-2026</strong>[cite: 2]</p>
+        <p>Universidad del Magdalena[cite: 26] | <strong>Versión 2.0-2026</strong>[cite: 26]</p>
     </footer>
 
     <script>
@@ -401,7 +409,6 @@
             });
         }
 
-        // Enviar clasificación y luego ver resultados
         submitBtn.addEventListener('click', () => {
             const currentOrder = [...dragList.querySelectorAll('.drag-item')].map(item => ({
                 optionId: item.getAttribute('data-id'),
@@ -432,7 +439,6 @@
             });
         });
 
-        // Evento para ver resultados directamente sin enviar respuestas
         viewResultsBtn.addEventListener('click', () => {
             fetchRealResults();
         });
@@ -463,12 +469,15 @@
             resultsList.innerHTML = '';
 
             rankedResults.forEach((item, index) => {
+                // Cálculo de promedio de posición o índice de aceptación grupal claro (Escala 1.0 a 7.0)
+                const avgPosition = totalSubmissions > 0 ? ( (totalSubmissions * 28 - item.score) / totalSubmissions + 1 ).toFixed(1) : "—";
                 const percentage = totalSubmissions > 0 ? Math.min(100, Math.round((item.score / maxPossibleScorePerOption) * 100)) : 0;
+                
                 const itemHTML = `
                     <div class="result-item">
                         <div class="result-label-row">
                             <span>#${index + 1} ${item.text}</span>
-                            <span>${percentage}% preferencia (${item.score} pts)</span>
+                            <span>Promedio pos: ${avgPosition} / 7.0</span>
                         </div>
                         <div class="progress-bar-bg">
                             <div class="progress-bar-fill" style="width: ${percentage}%"></div>
