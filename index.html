@@ -293,7 +293,7 @@
 
             <div class="ranking-legend">
                 <span>1. La forma que más me gusta</span>
-                <span>7. La forma que menos me convence</span>
+                <span>7. La forma que menos te convence</span>
             </div>
 
             <div class="drag-list" id="dragList">
@@ -460,24 +460,33 @@
         }
 
         function renderResults(scores, totalSubmissions) {
-            const rankedResults = itemsText.map((text, idx) => ({
-                text: text,
-                score: scores[idx] || 0
-            })).sort((a, b) => b.score - a.score);
+            // scores viene como un array de puntos Borda acumulados por opción.
+            // Para hallar la posición promedio real en escala de 1 a 7:
+            // Sabiendo que Borda otorga (8 - rank) puntos, la suma de posiciones (rank) se puede deducir o enviar directo.
+            // Aquí recalculamos el promedio de posición exacto: Promedio de puesto = 8 - (PuntajeBorda / totalSubmissions)
+            
+            const rankedResults = itemsText.map((text, idx) => {
+                const totalBorda = scores[idx] || 0;
+                const avgPos = totalSubmissions > 0 ? (8 - (totalBorda / totalSubmissions)).toFixed(1) : "—";
+                return {
+                    text: text,
+                    score: totalBorda,
+                    avgPosition: avgPos
+                };
+            }).sort((a, b) => b.score - a.score); // Orden descendente por puntaje Borda (mayor puntaje = mejor posición promedio)
 
-            const maxPossibleScorePerOption = totalSubmissions > 0 ? totalSubmissions * 7 : 1;
             resultsList.innerHTML = '';
 
             rankedResults.forEach((item, index) => {
-                // Cálculo de promedio de posición o índice de aceptación grupal claro (Escala 1.0 a 7.0)
-                const avgPosition = totalSubmissions > 0 ? ( (totalSubmissions * 28 - item.score) / totalSubmissions + 1 ).toFixed(1) : "—";
-                const percentage = totalSubmissions > 0 ? Math.min(100, Math.round((item.score / maxPossibleScorePerOption) * 100)) : 0;
+                // Barra visual proporcional basada en el puntaje máximo posible (totalSubmissions * 7)
+                const maxPossibleScore = totalSubmissions > 0 ? totalSubmissions * 7 : 1;
+                const percentage = totalSubmissions > 0 ? Math.min(100, Math.round((item.score / maxPossibleScore) * 100)) : 0;
                 
                 const itemHTML = `
                     <div class="result-item">
                         <div class="result-label-row">
                             <span>#${index + 1} ${item.text}</span>
-                            <span>Promedio pos: ${avgPosition} / 7.0</span>
+                            <span>Promedio pos: ${item.avgPosition} / 7.0</span>
                         </div>
                         <div class="progress-bar-bg">
                             <div class="progress-bar-fill" style="width: ${percentage}%"></div>
